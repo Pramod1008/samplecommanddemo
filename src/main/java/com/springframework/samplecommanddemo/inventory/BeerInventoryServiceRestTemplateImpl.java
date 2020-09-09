@@ -1,6 +1,8 @@
 package com.springframework.samplecommanddemo.inventory;
 
+import com.springframework.samplecommanddemo.inventory.model.BeerInventory;
 import com.springframework.samplecommanddemo.inventory.model.BeerInventoryDto;
+import com.springframework.samplecommanddemo.inventory.model.BeerInventoryMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -12,7 +14,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 @Slf4j
 @ConfigurationProperties(prefix = "sfg.brewery", ignoreUnknownFields = false)
@@ -22,6 +23,8 @@ public class BeerInventoryServiceRestTemplateImpl implements BeerInventoryServic
 
     private final String INVENTORY_PATH = "/api/v1/beer/{beerId}/inventory";
     private final RestTemplate restTemplate;
+
+    private BeerInventoryMapper beerInventoryMapper;
 
     private String beerInventoryServiceHost;
 
@@ -50,5 +53,18 @@ public class BeerInventoryServiceRestTemplateImpl implements BeerInventoryServic
                 .sum();
 
         return onHand;
+    }
+
+    @Override
+    public BeerInventory getOnInventory(String beerId) {
+        log.debug("Calling Inventory Service");
+
+        ResponseEntity<List<BeerInventory>> responseEntity = restTemplate
+                .exchange(beerInventoryServiceHost + INVENTORY_PATH, HttpMethod.GET, null,
+                        new ParameterizedTypeReference<List<BeerInventory>>(){}, (Object) beerId);
+
+        BeerInventory onHand = Objects.requireNonNull(responseEntity.getBody().get(0));
+
+        return  onHand;
     }
 }
